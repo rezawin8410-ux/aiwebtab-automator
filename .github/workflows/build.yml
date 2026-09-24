@@ -32,22 +32,15 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/build.log; exit ${PIPESTATUS[0]}
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
 
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: success()
         with:
-          name: build-log
-          path: /tmp/build.log
-          retention-days: 7
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: AIWebTabAutomator-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+          tag_name: v1.0.0
+          files: app/build/outputs/apk/debug/app-debug.apk
+          name: AIWebTabAutomator v1.0.0
