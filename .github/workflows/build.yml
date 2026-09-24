@@ -36,11 +36,13 @@ jobs:
           EXIT_CODE=$?
           echo "BUILD_EXIT_CODE=$EXIT_CODE" >> $GITHUB_OUTPUT
           if [ $EXIT_CODE -ne 0 ]; then
-            echo "::error title=Build Failed::Gradle build failed with exit code $EXIT_CODE"
-            echo "Last 50 lines of build output:"
-            tail -50 /tmp/build.out
+            # Output error as annotation
+            ERROR_LINE=$(grep -i "error\|exception\|failed" /tmp/build.out | tail -5 | head -1)
+            echo "::error title=Build Failed::Exit code $EXIT_CODE. Error: ${ERROR_LINE:-See build log}"
+            # Also output the last 100 lines
+            echo "Build output (last 100 lines):"
+            tail -100 /tmp/build.out
           fi
-          cat /tmp/build.out
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
