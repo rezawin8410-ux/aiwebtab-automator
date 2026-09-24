@@ -28,18 +28,25 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
+      - name: Debug environment
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          sdkmanager --list 2>/dev/null | head -20 || true
+          ls $ANDROID_HOME/platforms/ 2>/dev/null || echo "No platforms"
+          ls $ANDROID_HOME/build-tools/ 2>/dev/null || echo "No build-tools"
+
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/gradle.log; exit ${PIPESTATUS[0]}
 
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gradle-build-log
-          path: ~/.gradle/build-reports/*.html
+          name: gradle-log
+          path: /tmp/gradle.log
           retention-days: 7
 
       - name: Upload APK
@@ -57,3 +64,4 @@ jobs:
           tag_name: v1.0.0
           files: app/build/outputs/apk/debug/app-debug.apk
           name: AIWebTabAutomator v1.0.0
+          generate_release_notes: true
