@@ -24,7 +24,7 @@ jobs:
           java-version: '17'
 
       - name: Set up Android SDK
-        uses: maxim-lobanov/setup-android-tools@v3
+        uses: android-actions/setup-android@v3
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
