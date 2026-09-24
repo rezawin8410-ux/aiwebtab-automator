@@ -23,24 +23,23 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+
+      - name: Debug build env
         run: |
-          mkdir -p $HOME/android-sdk
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/sdk.zip
-          unzip -q /tmp/sdk.zip -d $HOME/android-sdk
-          mv $HOME/android-sdk/cmdline-tools $HOME/android-sdk/cmdline-tools-new
-          rm -rf $HOME/android-sdk/cmdline-tools
-          mv $HOME/android-sdk/cmdline-tools-new $HOME/android-sdk/cmdline-tools
-          export PATH="$HOME/android-sdk/cmdline-tools/latest/bin:$PATH"
-          export ANDROID_HOME="$HOME/android-sdk"
-          yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          sdkmanager --list 2>/dev/null | head -10 || true
+          ls $ANDROID_HOME/platforms/ 2>/dev/null || echo "No platforms"
+          ls $ANDROID_HOME/build-tools/ 2>/dev/null || echo "No build-tools"
 
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon
-        env:
-          ANDROID_HOME: $HOME/android-sdk
-          ANDROID_SDK_ROOT: $HOME/android-sdk
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
