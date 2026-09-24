@@ -29,26 +29,31 @@ jobs:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace || true
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
 
-      - name: Check build output
-        run: |
-          ls -la app/build/outputs/apk/debug/ || echo "APK not found"
-          find app/build -name "*.apk" || echo "No APK found"
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: ~/.gradle/build-reports/*.html
+          retention-days: 7
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: AIWebTabAutomator-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
-          if-no-files-found: warn
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
         if: success()
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0
           files: app/build/outputs/apk/debug/app-debug.apk
           name: AIWebTabAutomator v1.0.0
-          generate_release_notes: true
