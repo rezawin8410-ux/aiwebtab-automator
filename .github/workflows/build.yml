@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  actions: write
+  contents: write
+  actions: read
 
 jobs:
   build:
@@ -29,23 +29,22 @@ jobs:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
       - name: Build debug APK
-        run: |
-          ./gradlew :app:assembleDebug --no-daemon 2>&1 | tee /tmp/build.log
-          echo "Exit code: ${PIPESTATUS[0]}"
-          exit ${PIPESTATUS[0]}
+        run: ./gradlew :app:assembleDebug --no-daemon
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
 
-      - name: Upload build log
-        if: always()
+      - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-log
-          path: /tmp/build.log
-          retention-days: 7
+          name: AIWebTabAutomator-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
-        if: success()
         with:
           tag_name: v1.0.0
           files: app/build/outputs/apk/debug/app-debug.apk
           name: AIWebTabAutomator v1.0.0
+          generate_release_notes: true
