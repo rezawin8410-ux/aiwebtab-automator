@@ -29,18 +29,33 @@ jobs:
           cd $HOME/android-sdk
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O ct.zip
           unzip -q ct.zip
+          echo "=== Listing ==="
           ls -la
-          ls cmdline-tools/
-          ls cmdline-tools/latest/bin/ || ls cmdline-tools/bin/
-          export PATH="$HOME/android-sdk/cmdline-tools/latest/bin:$PATH"
-          sdkmanager --version
-          yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "=== cmdline-tools ==="
+          ls -la cmdline-tools/
+          ls -la cmdline-tools/latest/bin/ || ls -la cmdline-tools/bin/
+          
+          SDKMGR="$HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -f "$SDKMGR" ]; then
+            SDKMGR="$HOME/android-sdk/cmdline-tools/bin/sdkmanager"
+          fi
+          echo "sdkmanager at: $SDKMGR"
+          ls -la "$SDKMGR"
+          
+          export ANDROID_HOME=$HOME/android-sdk
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          
+          yes | "$SDKMGR" --licenses || true
+          "$SDKMGR" "platforms;android-35" "build-tools;35.0.0"
+          
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
