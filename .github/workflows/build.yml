@@ -17,8 +17,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build Android APK
-        uses: nift4/action-android-build-release@v1
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          path: .
-          target: app
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK
+        env:
+         SdkManagerOutput: 1
+        run: |
+          ANDROID_SDK="$HOME/android-sdk"
+          mkdir -p "$ANDROID_SDK"
+          
+          # Download and setup cmdline-tools
+          CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+          wget -q "$CMDLINE_TOOLS_URL" -O /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_SDK"
+          mv "$ANDROID_SDK/cmdline-tools" "$ANDROID_SDK/cmdline-tools-new"
+          rm -rf "$ANDROID_SDK/cmdline-tools"
+          mv "$ANDROID_SDK/cmdline-tools-new" "$ANDROID_SDK/cmdline-tools"
+          
+          export PATH="$ANDROID_SDK/cmdline-tools/latest/bin:$PATH"
+          export ANDROID_HOME="$ANDROID_SDK"
+          export ANDROID_SDK_ROOT="$ANDROID_SDK"
+          
+          # Accept all licenses and install platforms
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
