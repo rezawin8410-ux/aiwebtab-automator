@@ -28,20 +28,33 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
-      - name: Debug build env
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          echo "JAVA_HOME=$JAVA_HOME"
-          java -version
-          sdkmanager --list 2>/dev/null | head -10 || true
-          ls $ANDROID_HOME/platforms/ 2>/dev/null || echo "No platforms"
-          ls $ANDROID_HOME/build-tools/ 2>/dev/null || echo "No build-tools"
-
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+        id: build
+        run: |
+          set +e
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace > /tmp/build.out 2>&1
+          EXIT_CODE=$?
+          echo "BUILD_EXIT_CODE=$EXIT_CODE" >> $GITHUB_OUTPUT
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error title=Build Failed::Gradle build failed with exit code $EXIT_CODE"
+            echo "Last 50 lines of build output:"
+            tail -50 /tmp/build.out
+          fi
+          cat /tmp/build.out
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: /tmp/build.out
+          retention-days: 7
 
       - name: Upload APK
+        if: steps.build.outputs.BUILD_EXIT_CODE == '0'
         uses: actions/upload-artifact@v4
         with:
           name: AIWebTabAutomator-debug
@@ -49,8 +62,8 @@ jobs:
           retention-days: 30
 
       - name: Create Release
+        if: steps.build.outputs.BUILD_EXIT_CODE == '0'
         uses: softprops/action-gh-release@v2
-        if: success()
         with:
           tag_name: v1.0.0
           files: app/build/outputs/apk/debug/app-debug.apk
