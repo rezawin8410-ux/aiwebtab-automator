@@ -24,30 +24,31 @@ jobs:
           java-version: '17'
 
       - name: Install Android SDK
-        env:
-         SdkManagerOutput: 1
         run: |
           ANDROID_SDK="$HOME/android-sdk"
           mkdir -p "$ANDROID_SDK"
           
-          # Download and setup cmdline-tools
-          CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-          wget -q "$CMDLINE_TOOLS_URL" -O /tmp/cmdline-tools.zip
+          # Download cmdline-tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdline-tools.zip
           unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_SDK"
-          mv "$ANDROID_SDK/cmdline-tools" "$ANDROID_SDK/cmdline-tools-new"
-          rm -rf "$ANDROID_SDK/cmdline-tools"
-          mv "$ANDROID_SDK/cmdline-tools-new" "$ANDROID_SDK/cmdline-tools"
+          
+          # cmdline-tools zip extracts to cmdline-tools/cmdline-tools/, move latest inside
+          if [ -d "$ANDROID_SDK/cmdline-tools/cmdline-tools" ]; then
+            mv "$ANDROID_SDK/cmdline-tools/cmdline-tools" "$ANDROID_SDK/cmdline-tools/latest"
+          else
+            mv "$ANDROID_SDK/cmdline-tools" "$ANDROID_SDK/cmdline-tools/latest"
+          fi
           
           export PATH="$ANDROID_SDK/cmdline-tools/latest/bin:$PATH"
           export ANDROID_HOME="$ANDROID_SDK"
           export ANDROID_SDK_ROOT="$ANDROID_SDK"
           
-          # Accept all licenses and install platforms
+          # Accept licenses and install platforms
           yes | sdkmanager --licenses || true
           sdkmanager "platforms;android-35" "build-tools;35.0.0"
           
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK" >> $GITHUB_ENV
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
