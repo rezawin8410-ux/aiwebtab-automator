@@ -23,17 +23,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Accept Android licenses
-        run: |
-          sdkmanager --licenses --sdk_root=${{ runner.temp }}/android-sdk <<< y
-
       - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept licenses & install platforms
         run: |
-          export ANDROID_SDK_ROOT=${{ runner.temp }}/android-sdk
-          echo y | $ANDROID_SDK_ROOT/tools/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          yes | sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
+          sdkmanager --licenses --sdk_root=${{ runner.temp }}/android-sdk <<< y || true
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
