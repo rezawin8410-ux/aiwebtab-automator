@@ -29,8 +29,13 @@ jobs:
           cd $HOME/android-sdk
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O ct.zip
           unzip -q ct.zip
-          echo y | cmdline-tools/latest/bin/sdkmanager --licenses || true
-          cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          ls -la
+          ls cmdline-tools/
+          ls cmdline-tools/latest/bin/ || ls cmdline-tools/bin/
+          export PATH="$HOME/android-sdk/cmdline-tools/latest/bin:$PATH"
+          sdkmanager --version
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
 
