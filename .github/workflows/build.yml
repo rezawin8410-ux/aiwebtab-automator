@@ -23,32 +23,16 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK
+      - name: Install Android SDK tools
         run: |
-          ANDROID_SDK="$HOME/android-sdk"
-          mkdir -p "$ANDROID_SDK"
-          
-          # Download cmdline-tools
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdline-tools.zip
-          unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_SDK"
-          
-          # cmdline-tools zip extracts to cmdline-tools/cmdline-tools/, move latest inside
-          if [ -d "$ANDROID_SDK/cmdline-tools/cmdline-tools" ]; then
-            mv "$ANDROID_SDK/cmdline-tools/cmdline-tools" "$ANDROID_SDK/cmdline-tools/latest"
-          else
-            mv "$ANDROID_SDK/cmdline-tools" "$ANDROID_SDK/cmdline-tools/latest"
-          fi
-          
-          export PATH="$ANDROID_SDK/cmdline-tools/latest/bin:$PATH"
-          export ANDROID_HOME="$ANDROID_SDK"
-          export ANDROID_SDK_ROOT="$ANDROID_SDK"
-          
-          # Accept licenses and install platforms
-          yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
-          
-          echo "ANDROID_HOME=$ANDROID_SDK" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK" >> $GITHUB_ENV
+          mkdir -p $HOME/android-sdk
+          cd $HOME/android-sdk
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O ct.zip
+          unzip -q ct.zip
+          echo y | cmdline-tools/latest/bin/sdkmanager --licenses || true
+          cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
